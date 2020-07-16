@@ -3,12 +3,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-var jwt = require('express-jwt');
-
 var indexRouter = require('./routes/index');
-var authRouter = require('./routes/auth');
-var usersRouter = require('./routes/users');
-
+global.__basedir = __dirname;
 var app = express();
 
 // view engine setup
@@ -21,11 +17,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(jwt({ secret: 'app-secret-key'})
-    .unless({path: [new RegExp('/auth.*/', 'i')]}));
 app.use('/', indexRouter);
-app.use('/auth', authRouter);
-app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
