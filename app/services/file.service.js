@@ -13,11 +13,17 @@ const download = async (url, numberOfImages, prefix = '') => {
             name = prefix + '-' + name;
         }
         const filePath = path + '/' + name;
-        listOfPromise.push(request.head(url, (err, res, body) => {
-            request(url)
-                .pipe(fs.createWriteStream(filePath))
-            // .on('close', callback)
-        }));
+        const stream = fs.createWriteStream(filePath);
+        const pr = new Promise((resolve, reject) => {
+            console.log('---start: ' + filePath);
+            request.head(url, (err, res, body) => {
+                request(url).pipe(stream)
+            });
+            stream.on('close', () => {
+                resolve();
+            });
+        });
+        listOfPromise.push(pr);
     }
 
     await Promise.all(listOfPromise);

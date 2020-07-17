@@ -1,11 +1,37 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
+const downloader = require('../app/services/file.service');
+const rimraf = require('rimraf');
+const archiver = require('archiver');
 
-/* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
+});
+
+router.post('/', async (req, res, next) => {
+  const {url, number} = req.body;
+  try {
+    const folderName = await downloader.download(url, number);
+    const folderPath =  __basedir + '/storage/temp/' + folderName;
+    const archive = archiver('zip', { zlib: { level: 9 }});
+    archive.directory(folderPath, false);
+    res.set({
+      'Content-Type': 'application/zip',
+      'Content-Disposition': 'attachment; filename="' + folderName + '.zip' + '"'
+    });
+    res.on('finish', function () {
+      console.log('Finished sending coverage data.');
+      rimraf(folderPath, () => {});
+    });
+    archive.pipe(res);
+    archive.finalize();
+  } catch (e) {
+    console.log(e.message);
+    res.sendStatus(500) && next(e);
+  }
 });
 
 
 
 module.exports = router;
+
