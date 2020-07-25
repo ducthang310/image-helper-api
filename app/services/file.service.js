@@ -18,7 +18,6 @@ const download = async (url, numberOfImages, prefix = '') => {
         const filePath = path + '/' + name;
         const stream = fs.createWriteStream(filePath);
         const pr = new Promise((resolve, reject) => {
-            console.log('---start: ' + filePath);
             request.head(url, (err, res, body) => {
                 request(url).pipe(stream)
             });
@@ -33,19 +32,21 @@ const download = async (url, numberOfImages, prefix = '') => {
     return folderName;
 }
 
-const compress = async () => {
-    const files = await imagemin(['images/*.{jpg,png}'], {
-        destination: 'build/images',
-        plugins: [
-            imageminJpegtran(),
-            imageminPngquant({
-                quality: [0.6, 0.8]
-            })
-        ]
-    });
-
-    console.log(files);
-    //=> [{data: <Buffer 89 50 4e …>, destinationPath: 'build/images/foo.jpg'}, …]
+const compress = async (path) => {
+    try {
+        return imagemin([path + '/*.{jpg,png}'], {
+            destination: path,
+            plugins: [
+                imageminJpegtran(),
+                imageminPngquant({
+                    quality: [0.7, 0.9]
+                })
+            ]
+        });
+    } catch (e) {
+        console.error(e);
+        throw new Error('Could not compress these images');
+    }
 }
 
 module.exports = {
