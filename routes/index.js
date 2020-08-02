@@ -11,9 +11,9 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/download', async (req, res, next) => {
-  const {url, number} = req.body;
+  const {url, number, prefix} = req.body;
   try {
-    const folderName = await downloader.download(url, number);
+    const folderName = await downloader.download(url, number, prefix);
     const folderPath =  __basedir + '/storage/temp/' + folderName;
     const archive = archiver('zip', { zlib: { level: 9 }});
     archive.directory(folderPath, false);
@@ -23,7 +23,9 @@ router.post('/download', async (req, res, next) => {
     });
     res.on('finish', function () {
       console.log('Finished sending coverage data.');
-      rimraf(folderPath, () => {});
+      setTimeout(() => {
+        rimraf(folderPath, () => {});
+      }, 20000);
     });
     archive.pipe(res);
     archive.finalize();
