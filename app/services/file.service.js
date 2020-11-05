@@ -2,8 +2,9 @@ const request = require('request');
 const uuid = require('uuid-random');
 const fs = require('fs');
 const imagemin = require('imagemin');
-const imageminJpegtran = require('imagemin-jpegtran');
+const imageminMozjpeg = require('imagemin-mozjpeg');
 const imageminPngquant = require('imagemin-pngquant');
+const Jimp = require('jimp');
 
 const download = async (url, numberOfImages, prefix = '') => {
     const folderName = uuid();
@@ -37,7 +38,7 @@ const compress = async (path) => {
         return imagemin([path + '/*.{jpg,png}'], {
             destination: path,
             plugins: [
-                imageminJpegtran(),
+                imageminMozjpeg({quality: 90}),
                 imageminPngquant({
                     quality: [0.7, 0.9]
                 })
@@ -49,6 +50,29 @@ const compress = async (path) => {
     }
 }
 
+const convertPngToJpg = async (path) => {
+    try {
+        const files = fs.readdirSync(path);
+        console.log(files);
+        files.map(fileName => {
+            if (0 < fileName.indexOf('.png')) {
+                const newName = fileName.replace('.png', '.jpg');
+                Jimp.read(path + '/' + fileName, function (err, image) {
+                    if (err) {
+                        console.log(err)
+                    } else {
+                        image.write(path + '/png/' + newName)
+                    }
+                })
+            }
+        });
+
+    } catch (e) {
+        console.error(e);
+        throw new Error('Could not convert to jpg');
+    }
+}
+
 module.exports = {
-    download, compress
+    download, compress, convertPngToJpg
 }
