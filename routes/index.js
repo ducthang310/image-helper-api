@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const downloader = require('../app/services/file.service');
+const fileHelper = require('../app/services/file.service');
 const rimraf = require('rimraf');
 const archiver = require('archiver');
 const multer = require('multer');
 const upload = multer({ dest: 'storage/multer' });
+const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
+const unzipper = require('unzipper');
 
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
@@ -13,7 +16,7 @@ router.get('/', function(req, res, next) {
 router.post('/download', async (req, res, next) => {
   const {url, number, prefix} = req.body;
   try {
-    const folderName = await downloader.download(url, number, prefix);
+    const folderName = await fileHelper.download(url, number, prefix);
     const folderPath =  __basedir + '/storage/temp/' + folderName;
     const archive = archiver('zip', { zlib: { level: 9 }});
     archive.directory(folderPath, false);
@@ -37,24 +40,30 @@ router.post('/download', async (req, res, next) => {
 
 router.post('/compress', upload.single('images'), async (req, res, next) => {
   try {
-    const name = uuid();
+    const folderName = uuidv4();
     // Store zip file into `temp` folder:
-    const file = req.file;
     const tempFolderPath = __basedir + '/storage/temp/';
-    const imagesPath =  tempFolderPath + name;
+    const imagesPath =  tempFolderPath + folderName;
+    const desPath =  imagesPath + '/' + 'compressed';
 
     // Unzip to imagesPath
+    const r = await fs.createReadStream(req.file.path)
+        .pipe(unzipper.Extract({ path: imagesPath }))
+        .on('entry', entry => entry.autodrain())
+        .promise();
 
+    // Compress images
+    await fileHelper.compress(imagesPath, desPath);
 
     const archive = archiver('zip', { zlib: { level: 9 }});
-    archive.directory(imagesPath, false);
+    archive.directory(desPath, false);
     res.set({
       'Content-Type': 'application/zip',
       'Content-Disposition': 'attachment; filename="' + folderName + '.zip' + '"'
     });
     res.on('finish', function () {
       console.log('Finished sending coverage data.');
-      rimraf(folderPath, () => {});
+      rimraf(imagesPath, () => {});
     });
     archive.pipe(res);
     archive.finalize();
