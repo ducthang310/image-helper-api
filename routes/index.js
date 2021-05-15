@@ -47,7 +47,12 @@ router.post('/compress', upload.single('images'), async (req, res, next) => {
     const desPath =  imagesPath + '/' + 'compressed';
 
     // Unzip to imagesPath
-    const r = await fs.createReadStream(req.file.path)
+    if (!req.file) {
+      res.sendStatus(400) && next('Missing zip file');
+      return false;
+    }
+    const zipFilePath = req.file.path;
+    const r = await fs.createReadStream(zipFilePath)
         .pipe(unzipper.Extract({ path: imagesPath }))
         .on('entry', entry => entry.autodrain())
         .promise();
@@ -64,6 +69,7 @@ router.post('/compress', upload.single('images'), async (req, res, next) => {
     res.on('finish', function () {
       console.log('Finished sending coverage data.');
       rimraf(imagesPath, () => {});
+      rimraf(zipFilePath, () => {});
     });
     archive.pipe(res);
     archive.finalize();
