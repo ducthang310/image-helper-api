@@ -33,10 +33,10 @@ const download = async (url, numberOfImages, prefix = '') => {
     return folderName;
 }
 
-const compress = async (path) => {
+const compress = async (path, desPath) => {
     try {
         return imagemin([path + '/*.{jpg,png}'], {
-            destination: path,
+            destination: desPath,
             plugins: [
                 imageminMozjpeg({quality: 90}),
                 imageminPngquant({
