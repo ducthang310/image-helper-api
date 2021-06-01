@@ -34,7 +34,8 @@ router.post('/download', async (req, res, next) => {
     archive.finalize();
   } catch (e) {
     console.log(e.message);
-    res.sendStatus(500) && next(e);
+    res.status(500);
+    res.send(e.message);
   }
 });
 
@@ -48,7 +49,8 @@ router.post('/compress', upload.single('images'), async (req, res, next) => {
 
     // Unzip to imagesPath
     if (!req.file) {
-      res.sendStatus(400) && next('Missing zip file');
+      res.status(400);
+      res.send('Missing zip file');
       return false;
     }
     const zipFilePath = req.file.path;
@@ -75,7 +77,8 @@ router.post('/compress', upload.single('images'), async (req, res, next) => {
     archive.finalize();
   } catch (e) {
     console.error(e.message);
-    res.sendStatus(500) && next(e);
+    res.status(500);
+    res.send(e.message);
   }
 });
 
